@@ -3,11 +3,11 @@ import gymnasium as gym
 import numpy as np
 
 ENVS = [
+    "Hopper-v4",
     "Humanoid-v4",
     "Ant-v4",
     "Walker2d-v4",
     "HalfCheetah-v4",
-    "Hopper-v4",
 ]
 
 class MuJoCoEnv:
