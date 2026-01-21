@@ -135,8 +135,7 @@ class SACLearner:
 
         def actor_loss_fn(actor_params) -> Tuple[jnp.ndarray, Dict[str, float]]:
             dist = self.actor.apply_fn({"params": actor_params}, batch["observations"])
-            actions = dist.sample(seed=key)
-            log_probs = dist.log_prob(actions)
+            actions, log_probs = dist.sample(seed=key)
             q1 = self.critic1.apply_fn(
                 {"params": self.critic1.params},
                 batch["observations"],
@@ -178,16 +177,16 @@ class SACLearner:
     def update_critic(self, batch):
         rng = self.rng
 
-        # -------- sample next actions --------
+        # sample next actions
         dist = self.actor.apply_fn(
             {"params": self.actor.params},
             batch["next_observations"],
         )
 
         key, rng = jax.random.split(rng)
-        next_actions = dist.sample(seed=key)
+        next_actions, next_log_probs = dist.sample(seed=key)
 
-        # -------- target Q --------
+        # target Q
         next_q1 = self.target_critic1.apply_fn(
             {"params": self.target_critic1.params},
             batch["next_observations"],
@@ -205,7 +204,6 @@ class SACLearner:
         target_q = batch["rewards"] + self.discount * batch["masks"] * next_q
 
         if self.backup_entropy:
-            next_log_probs = dist.log_prob(next_actions)
             target_q -= (
                     self.discount
                     * batch["masks"]
@@ -213,7 +211,7 @@ class SACLearner:
                     * next_log_probs
             )
 
-        # -------- critic 1 update --------
+        # critic 1
         def critic1_loss_fn(params):
             q1 = self.critic1.apply_fn(
                 {"params": params},
@@ -225,7 +223,7 @@ class SACLearner:
         grads1 = jax.grad(critic1_loss_fn)(self.critic1.params)
         critic1 = self.critic1.apply_gradients(grads=grads1)
 
-        # -------- critic 2 update --------
+        # critic 2
         def critic2_loss_fn(params):
             q2 = self.critic2.apply_fn(
                 {"params": params},
@@ -237,20 +235,16 @@ class SACLearner:
         grads2 = jax.grad(critic2_loss_fn)(self.critic2.params)
         critic2 = self.critic2.apply_gradients(grads=grads2)
 
-        # -------- SOFT UPDATE TARGETS (TU JEST KLUCZ) --------
+        # soft update targets
         target_critic1 = self.target_critic1.replace(
             params=optax.incremental_update(
-                critic1.params,
-                self.target_critic1.params,
-                self.tau,
+                critic1.params, self.target_critic1.params, self.tau
             )
         )
 
         target_critic2 = self.target_critic2.replace(
             params=optax.incremental_update(
-                critic2.params,
-                self.target_critic2.params,
-                self.tau,
+                critic2.params, self.target_critic2.params, self.tau
             )
         )
 

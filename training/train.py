@@ -45,7 +45,7 @@ def evaluate_policy(agent, env_name, num_episodes=5):
                 {"params": agent.actor.params},
                 obs[None, :]
             )
-            action = np.asarray(jax.numpy.tanh(dist.mean))[0]  # deterministycznie
+            action = np.asarray(dist.mode())[0]
             obs, reward, done, _ = env.step(action)
             ep_return += reward
 
@@ -121,7 +121,8 @@ def train(env_name, total_steps=1_000_000):
                 obs[None, :]
             )
             key, rng = jax.random.split(agent.rng)
-            action = np.asarray(dist.sample(seed=key))[0]
+            action, _ = dist.sample(seed=key)
+            action = np.asarray(action[0])
             agent = agent.replace(rng=rng)
 
         next_obs, reward, done, _ = env.step(action)

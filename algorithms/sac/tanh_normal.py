@@ -25,11 +25,23 @@ class TanhGaussianDistribution:
         self.log_std = log_std
         self.std = jnp.exp(log_std)
 
+    def mode(self):
+        return jnp.tanh(self.mean)
+
     def sample(self, seed):
         eps = jax.random.normal(seed, self.mean.shape)
         z = self.mean + self.std * eps
         action = jnp.tanh(z)
-        return action
+
+        log_prob = -0.5 * (
+                ((z - self.mean) / self.std) ** 2
+                + 2 * self.log_std
+                + jnp.log(2 * jnp.pi)
+        )
+        log_prob = log_prob.sum(axis=-1)
+        log_prob -= jnp.sum(jnp.log(1 - action ** 2 + 1e-6), axis=-1)
+
+        return action, log_prob
 
     def log_prob(self, action):
         # inverse tanh
