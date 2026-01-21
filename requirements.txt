@@ -1,0 +1,7 @@
+pandas
+matplotlib
+imageio
+jax[cuda13]
+flax
+optax
+tdqm

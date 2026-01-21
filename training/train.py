@@ -7,7 +7,7 @@ import jax
 import pickle
 import csv
 import os
-
+from tqdm import tqdm
 
 def log_eval_return(step, eval_return, env_name):
     os.makedirs(f"results/{env_name}/logs", exist_ok=True)
@@ -111,7 +111,7 @@ def train(env_name, total_steps=1_000_000):
 
     obs = env.reset()
 
-    for step in range(total_steps):
+    for step in tqdm(range(total_steps)):
 
         if step < 10_000:
             action = env.env.action_space.sample()
