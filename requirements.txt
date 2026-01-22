@@ -5,3 +5,4 @@ jax[cuda13]
 flax
 optax
 tqdm
+gymnasium[mujoco]
