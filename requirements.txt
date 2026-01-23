@@ -1,8 +1,9 @@
-pandas
-matplotlib
-imageio
-jax[cuda13]
-flax
-optax
-tqdm
-gymnasium[mujoco]
+pandas==3.0.0
+numpy==2.4.1
+matplotlib==3.108
+imageio==2.37.2
+jax[cuda13]==0.9.0
+flax==0.12.2
+optax==0.2.6
+tqdm==4.67.1
+gymnasium[mujoco]==1.2.3
