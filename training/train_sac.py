@@ -8,30 +8,9 @@ import pickle
 import csv
 import os
 from tqdm import tqdm
+from .logger import log_episode_return, log_eval_return, log_to_file
 
-def log_eval_return(step, eval_return, env_name):
-    os.makedirs(f"results/{env_name}/logs", exist_ok=True)
-    path = f"results/{env_name}/logs/eval_returns.csv"
-
-    file_exists = os.path.exists(path)
-    with open(path, "a", newline="") as f:
-        writer = csv.writer(f)
-        if not file_exists:
-            writer.writerow(["step", "eval_return"])
-        writer.writerow([step, eval_return])
-
-def log_episode_return(step, episode_return, episode_length, env_name):
-    os.makedirs(f"results/{env_name}/logs", exist_ok=True)
-    path = f"results/{env_name}/logs/returns.csv"
-
-    file_exists = os.path.exists(path)
-    with open(path, "a", newline="") as f:
-        writer = csv.writer(f)
-        if not file_exists:
-            writer.writerow(["step", "episode_return", "episode_length"])
-        writer.writerow([step, episode_return, episode_length])
-
-def evaluate_policy(agent, env_name, num_episodes=5):
+def evaluate_sac_policy(agent, env_name, num_episodes=5):
     env = MuJoCoEnv(env_name, seed=42)
     returns = []
 
@@ -54,30 +33,10 @@ def evaluate_policy(agent, env_name, num_episodes=5):
     env.close()
     return float(np.mean(returns))
 
-def log_to_file(step, info, env_name):
-    os.makedirs(f"results/{env_name}/logs", exist_ok=True)
-    path = f"results/{env_name}/logs/train.csv"
 
-    file_exists = os.path.exists(path)
-    with open(path, "a", newline="") as f:
-        writer = csv.writer(f)
-        if not file_exists:
-            writer.writerow(
-                ["step", "actor_loss", "critic1_loss", "critic2_loss", "entropy", "temperature"]
-            )
-        writer.writerow([
-            step,
-            info.get("actor_loss"),
-            info.get("critic1_loss"),
-            info.get("critic2_loss"),
-            info.get("entropy"),
-            info.get("temperature"),
-        ])
-
-
-def save_checkpoint(agent, step, env_name):
-    os.makedirs(f"results/{env_name}/checkpoints", exist_ok=True)
-    path = f"results/{env_name}/checkpoints/sac_step_{step}.npz"
+def save_checkpoint(agent, step, env_name, prefix="sac/"):
+    os.makedirs(f"results/{prefix}{env_name}/checkpoints", exist_ok=True)
+    path = f"results/{prefix}{env_name}/checkpoints/sac_step_{step}.npz"
 
     data = {
         "actor": to_bytes(agent.actor.params),
@@ -92,7 +51,10 @@ def save_checkpoint(agent, step, env_name):
         pickle.dump(data, f)
 
 
-def train(env_name, total_steps=1_000_000):
+def train_sac(env_name, total_steps=1_000_000, prefix = "sac/"):
+
+    print("=== SAC Training ===")
+
     episode_return = 0.0
     episode_length = 0
     env = MuJoCoEnv(env_name, seed=0)
@@ -136,6 +98,7 @@ def train(env_name, total_steps=1_000_000):
                 episode_return=episode_return,
                 episode_length=episode_length,
                 env_name=env_name,
+                prefix=prefix
             )
             episode_return = 0.0
             episode_length = 0
@@ -148,13 +111,13 @@ def train(env_name, total_steps=1_000_000):
             agent, info = agent.update(batch)
 
             if step % 1_000 == 0:
-                log_to_file(step, info, env_name)
+                log_to_file(step, info, env_name, prefix=prefix)
 
         if step % 50_000 == 0 and step > 0:
-            save_checkpoint(agent, step, env_name)
+            save_checkpoint(agent, step, env_name, prefix=prefix)
 
         if step % 10_000 == 0 and step > 0:
-            eval_return = evaluate_policy(agent, env_name)
-            log_eval_return(step, eval_return, env_name)
+            eval_return = evaluate_sac_policy(agent, env_name)
+            log_eval_return(step, eval_return, env_name, prefix=prefix)
 
     env.close()
