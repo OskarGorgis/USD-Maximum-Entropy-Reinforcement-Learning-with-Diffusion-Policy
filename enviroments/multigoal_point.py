@@ -41,7 +41,8 @@ class MultiGoalPointEnv(gym.Env):
         # --- KLUCZOWA LINIA ---
         # reward = -np.min(distances)
         # albo (lepiej):
-        reward = -1 * logsumexp(distances / 0.1)
+        beta = 5.0  # im większe, tym ostrzejsze maksima
+        reward = np.log(np.sum(np.exp(-beta * distances))) / beta
 
         done = False  # NIGDY nie kończymy epizodu
 
