@@ -101,3 +101,79 @@ def plot_results(envs=DEFAULT_ENVS, results_dir="results"):
             print(f"[WARN] No returns.csv for {env_name}")
 
         print(f"[OK] Plots generated for {env_name}")
+
+
+def plot_multigoal_results(
+    csv_path="results/multigoal/logs/train.csv",
+    out_dir="results/multigoal/plots",
+):
+    os.makedirs(out_dir, exist_ok=True)
+
+    df = pd.read_csv(csv_path)
+    steps = df["step"]
+
+    # -------- Reward --------
+    plt.figure()
+    plt.plot(steps, df["reward"])
+    plt.xlabel("Training steps")
+    plt.ylabel("Reward")
+    plt.title("Reward over time")
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig(os.path.join(out_dir, "reward.png"))
+    plt.close()
+
+    # -------- Entropy --------
+    plt.figure()
+    plt.plot(steps, df["entropy"])
+    plt.xlabel("Training steps")
+    plt.ylabel("Entropy")
+    plt.title("Policy entropy")
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig(os.path.join(out_dir, "entropy.png"))
+    plt.close()
+
+    # -------- Temperature --------
+    plt.figure()
+    plt.plot(steps, df["temperature"])
+    plt.xlabel("Training steps")
+    plt.ylabel("Temperature α")
+    plt.title("Entropy temperature")
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig(os.path.join(out_dir, "temperature.png"))
+    plt.close()
+
+    # -------- Closest goal (mode switching) --------
+    plt.figure()
+    plt.step(steps, df["closest_goal"], where="post")
+    plt.xlabel("Training steps")
+    plt.ylabel("Closest goal index")
+    plt.title("Active goal over time")
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig(os.path.join(out_dir, "closest_goal.png"))
+    plt.close()
+
+    # -------- 2D trajectory --------
+    plt.figure()
+    plt.plot(df["x"], df["y"], linewidth=1.0)
+    plt.scatter(
+        [1, 1, -1, -1],
+        [1, -1, 1, -1],
+        c="red",
+        marker="x",
+        label="Goals",
+    )
+    plt.xlabel("x")
+    plt.ylabel("y")
+    plt.title("Agent trajectory in multi-goal space")
+    plt.legend()
+    plt.axis("equal")
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig(os.path.join(out_dir, "trajectory.png"))
+    plt.close()
+
+    print(f"[OK] Multi-goal plots saved to {out_dir}")
