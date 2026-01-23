@@ -8,7 +8,7 @@ import pickle
 import csv
 import os
 from tqdm import tqdm
-from .logger import log_episode_return, log_eval_return, log_to_file
+from .logger import log_episode_return, log_eval_return, log_to_file, save_checkpoint
 
 def evaluate_sac_policy(agent, env_name, num_episodes=5):
     env = MuJoCoEnv(env_name, seed=42)
@@ -34,10 +34,7 @@ def evaluate_sac_policy(agent, env_name, num_episodes=5):
     return float(np.mean(returns))
 
 
-def save_checkpoint(agent, step, env_name, prefix="sac/"):
-    os.makedirs(f"results/{prefix}{env_name}/checkpoints", exist_ok=True)
-    path = f"results/{prefix}{env_name}/checkpoints/sac_step_{step}.npz"
-
+def save_params(agent, step, env_name, params_to_save, prefix="sac/"):
     data = {
         "actor": to_bytes(agent.actor.params),
         "critic1": to_bytes(agent.critic1.params),
@@ -46,9 +43,7 @@ def save_checkpoint(agent, step, env_name, prefix="sac/"):
         "target_critic2": to_bytes(agent.target_critic2.params),
         "temp": to_bytes(agent.temp.params),
     }
-
-    with open(path, "wb") as f:
-        pickle.dump(data, f)
+    save_checkpoint(step, env_name, params_to_save, prefix=prefix)
 
 
 def train_sac(env_name, total_steps=1_000_000, prefix = "sac/"):
@@ -114,7 +109,7 @@ def train_sac(env_name, total_steps=1_000_000, prefix = "sac/"):
                 log_to_file(step, info, env_name, prefix=prefix)
 
         if step % 50_000 == 0 and step > 0:
-            save_checkpoint(agent, step, env_name, prefix=prefix)
+            save_params(agent, step, env_name, prefix=prefix)
 
         if step % 10_000 == 0 and step > 0:
             eval_return = evaluate_sac_policy(agent, env_name)

@@ -9,6 +9,8 @@ from flax.serialization import to_bytes
 import pickle
 from tqdm import tqdm
 
+from .logger import save_checkpoint
+
 
 def log_step_to_csv(
     step,
@@ -129,19 +131,17 @@ def train_multigoal(
 
 
 
-def save_checkpoint(agent, step):
-    os.makedirs("results/multigoal/checkpoints", exist_ok=True)
-    path = f"results/multigoal/checkpoints/sac_step_{step}.pkl"
+def save_params(agent, step, prefix="/sac"):
 
-    data = {
+    params_to_save = {
         "actor": to_bytes(agent.actor.params),
         "critic1": to_bytes(agent.critic1.params),
         "critic2": to_bytes(agent.critic2.params),
         "temp": to_bytes(agent.temp.params),
     }
 
-    with open(path, "wb") as f:
-        pickle.dump(data, f)
+    save_checkpoint(step, params_to_save, "Multigoal", params_to_save, prefix=prefix)
+
 
 
 def log_multigoal(

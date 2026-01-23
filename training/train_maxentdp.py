@@ -8,26 +8,9 @@ import pickle
 import csv
 import os
 from tqdm import tqdm
-from .logger import log_episode_return, log_eval_return, log_to_file
+from .logger import log_episode_return, log_eval_return, log_to_file, save_checkpoint
 
 from jaxrl5.evaluation import evaluate
-
-
-def save_checkpoint(agent, step, env_name, prefix=""):
-    os.makedirs(f"results/{prefix}{env_name}/checkpoints", exist_ok=True)
-    path = f"results/{prefix}{env_name}/checkpoints/maxentdp_step_{step}.npz"
-
-    data = {
-        "score_model": to_bytes(agent.score_model.params),
-        "critic_1": to_bytes(agent.critic_1.params),
-        "critic_2": to_bytes(agent.critic_2.params),
-        "target_critic_1": to_bytes(agent.target_critic_1.params),
-        "target_critic_2": to_bytes(agent.target_critic_2.params),
-    }
-
-    with open(path, "wb") as f:
-        pickle.dump(data, f)
-
 
 temp = {
     "Hopper-v4" : 0.05 ,
@@ -36,6 +19,16 @@ temp = {
     "Walker2d-v4" : 0.01,
     "HalfCheetah-v4" : 0.2,
 }
+
+def save_params(agent, step, env_name, params_to_save, prefix="MaxEntDP/"):
+    params_to_save = {
+        "score_model": to_bytes(agent.score_model.params),
+        "critic_1": to_bytes(agent.critic_1.params),
+        "critic_2": to_bytes(agent.critic_2.params),
+        "target_critic_1": to_bytes(agent.target_critic_1.params),
+        "target_critic_2": to_bytes(agent.target_critic_2.params),
+    }
+    save_checkpoint(step, env_name, params_to_save, prefix=prefix)
 
 def train_maxentdp(env_name, total_steps=500_000, prefix="MaxEntDP/"):
 
@@ -99,7 +92,7 @@ def train_maxentdp(env_name, total_steps=500_000, prefix="MaxEntDP/"):
                 log_to_file(step, info, env_name, prefix=prefix)
 
         if step % 50_000 == 0 and step > 0:
-            save_checkpoint(agent, step, env_name, prefix=prefix)
+            save_params(agent, step, env_name, prefix=prefix)
 
         if step % 10_000 == 0 and step > 0:
             eval_return = evaluate(
