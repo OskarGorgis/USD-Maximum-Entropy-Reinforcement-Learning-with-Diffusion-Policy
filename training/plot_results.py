@@ -11,8 +11,86 @@ DEFAULT_ENVS = [
     "Hopper-v4",
 ]
 
+def plot_results_maxentdp(envs=DEFAULT_ENVS, results_dir="/home/arion/Workspace/USD/MaxEntDP/examples/states/results", agent_name="maxentdp"):
+    for env_name in envs:
+        logs_dir = os.path.join(results_dir, env_name, "logs")
+        plots_dir = os.path.join(results_dir, env_name, "plots")
+        os.makedirs(plots_dir, exist_ok=True)
 
-def plot_results(envs=DEFAULT_ENVS, results_dir="results"):
+        # ================= TRAIN METRICS =================
+        train_csv = os.path.join(logs_dir, f"train_{agent_name}.csv")
+        if os.path.exists(train_csv):
+            df = pd.read_csv(train_csv)
+            steps = df["step"]
+
+            # Actor loss
+            plt.figure()
+            plt.plot(steps, df["actor_loss_mean"], label="Actor loss")
+            plt.xlabel("Environment steps")
+            plt.ylabel("Actor loss")
+            plt.title(f"SAC actor loss - {env_name}")
+            plt.grid(True)
+            plt.legend()
+            plt.tight_layout()
+            plt.savefig(os.path.join(plots_dir, "actor_loss_mean.png"))
+            plt.close()
+
+            # Critic losses
+            plt.figure()
+            plt.plot(steps, df["c_loss_mean_1"], label="Critic 1 loss")
+            plt.plot(steps, df["c_loss_mean_2"], label="Critic 2 loss")
+            plt.xlabel("Environment steps")
+            plt.ylabel("Critic loss (MSE)")
+            plt.title(f"SAC critic losses - {env_name}")
+            plt.grid(True)
+            plt.legend()
+            plt.tight_layout()
+            plt.savefig(os.path.join(plots_dir, "critic_losses.png"))
+            plt.close()
+
+            # Entropy
+            plt.figure()
+            plt.plot(steps, df["log_prob"], label="Entropy")
+            plt.xlabel("Environment steps")
+            plt.ylabel("Entropy")
+            plt.title(f"SAC entropy - {env_name}")
+            plt.grid(True)
+            plt.legend()
+            plt.tight_layout()
+            plt.savefig(os.path.join(plots_dir, "entropy.png"))
+            plt.close()
+        else:
+            print(f"[WARN] No train.csv for {env_name}")
+
+        # ================= EPISODE RETURN =================
+        returns_csv = os.path.join(logs_dir, f"returns_{agent_name}.csv")
+        if os.path.exists(returns_csv):
+            df_ret = pd.read_csv(returns_csv)
+
+            window = 10
+            rolling_return = df_ret["episode_return"].rolling(window).mean()
+
+            plt.figure()
+            plt.plot(
+                df_ret["step"],
+                rolling_return,
+                label=f"Episode return (rolling mean {window})",
+            )
+            plt.xlabel("Environment steps")
+            plt.ylabel("Episode return")
+            plt.title(f"SAC episode return – {env_name}")
+            plt.grid(True)
+            plt.legend()
+            plt.tight_layout()
+            plt.savefig(os.path.join(plots_dir, "episode_return.png"))
+            plt.close()
+        else:
+            print(f"[WARN] No returns.csv for {env_name}")
+
+        print(f"[OK] Plots generated for {env_name}")
+
+
+def plot_results_sac(envs=DEFAULT_ENVS, results_dir="results"):
     for env_name in envs:
         logs_dir = os.path.join(results_dir, env_name, "logs")
         plots_dir = os.path.join(results_dir, env_name, "plots")
@@ -104,9 +182,10 @@ def plot_results(envs=DEFAULT_ENVS, results_dir="results"):
 
 
 def plot_multigoal_results(
-    csv_path="results/multigoal/logs/train.csv",
-    out_dir="results/multigoal/plots",
+agent_name="sac"
 ):
+    csv_path=f"results/{agent_name}/multigoal/logs/train.csv",
+    out_dir=f"results/{agent_name}/multigoal/plots",
     os.makedirs(out_dir, exist_ok=True)
 
     df = pd.read_csv(csv_path)
