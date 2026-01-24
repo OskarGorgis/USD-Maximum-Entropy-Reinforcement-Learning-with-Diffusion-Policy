@@ -2,15 +2,8 @@ import os
 import pandas as pd
 import matplotlib.pyplot as plt
 
-DEFAULT_ENVS = [
-    "Humanoid-v3",
-    "Ant-v3",
-    "Walker2d-v3",
-    "HalfCheetah-v3",
-    "Hopper-v3",
-]
 
-def plot_results_maxentdp(envs=DEFAULT_ENVS, results_dir="/home/arion/Workspace/USD/MaxEntDP/examples/states/results", agent_name="maxentdp"):
+def plot_results_maxentdp(envs=[], results_dir="/results", agent_name="maxentdp"):
     for env_name in envs:
         logs_dir = os.path.join(results_dir, env_name, "logs")
         plots_dir = os.path.join(results_dir, env_name, "plots")

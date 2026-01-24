@@ -17,8 +17,8 @@ if __name__ == "__main__":
         train_maxentdp(env_name)    # maxentdp training with logging
 
         # there are 2 plotters because parameters of models are called different in files, it is possible to change with refacorization of whole algorithms code
-        plot_results_sac()
-        plot_results_maxentdp()
+        plot_results_sac(envs=ENVS)
+        plot_results_maxentdp(envs=ENVS)
     
     # training both algorithms, also 2 diffeerent training processes
     train_multigoal_sac()
