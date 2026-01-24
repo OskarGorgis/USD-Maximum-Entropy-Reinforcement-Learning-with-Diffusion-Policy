@@ -5,13 +5,9 @@ import numpy as np
 import jax
 import os
 import csv
-from flax.serialization import to_bytes
-import pickle
 from tqdm import tqdm
 
-from .logger import save_checkpoint
-
-def train_multigoal(
+def train_multigoal_sac(
     total_steps=200_000,
     seed=0,
     buffer_size=200_000,
