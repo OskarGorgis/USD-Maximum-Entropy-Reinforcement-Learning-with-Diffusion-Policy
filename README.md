@@ -1,2 +1,2 @@
-# USC-Maximum-Entropy-Reinforcement-Learning-with-Diffusion-Policy
+# USD-Maximum-Entropy-Reinforcement-Learning-with-Diffusion-Policy
 

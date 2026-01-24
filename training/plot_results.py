@@ -3,7 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 
-def plot_results_maxentdp(envs=[], results_dir="/results", agent_name="maxentdp"):
+def plot_results_maxentdp(envs=[], results_dir="results/MaxEntDP/", agent_name="maxentdp"):
     for env_name in envs:
         logs_dir = os.path.join(results_dir, env_name, "logs")
         plots_dir = os.path.join(results_dir, env_name, "plots")
@@ -81,7 +81,7 @@ def plot_results_maxentdp(envs=[], results_dir="/results", agent_name="maxentdp"
         print(f"[OK] Plots generated for {env_name}")
 
 
-def plot_results_sac(envs=DEFAULT_ENVS, results_dir="results"):
+def plot_results_sac(envs=[], results_dir="results"):
     for env_name in envs:
         logs_dir = os.path.join(results_dir, env_name, "logs")
         plots_dir = os.path.join(results_dir, env_name, "plots")
