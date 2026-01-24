@@ -1,6 +1,8 @@
 import os
 import pandas as pd
 import matplotlib.pyplot as plt
+import re
+import numpy as np
 
 
 def plot_results_maxentdp(envs=[], results_dir="/results", agent_name="maxentdp"):
@@ -81,7 +83,7 @@ def plot_results_maxentdp(envs=[], results_dir="/results", agent_name="maxentdp"
         print(f"[OK] Plots generated for {env_name}")
 
 
-def plot_results_sac(envs=DEFAULT_ENVS, results_dir="results"):
+def plot_results_sac(envs, results_dir="results"):
     for env_name in envs:
         logs_dir = os.path.join(results_dir, env_name, "logs")
         plots_dir = os.path.join(results_dir, env_name, "plots")
@@ -246,3 +248,178 @@ agent_name="sac"
     plt.close()
 
     print(f"[OK] Multi-goal plots saved to {out_dir}")
+
+def parse_eval_return(value):
+    if isinstance(value, (int, float, np.number)):
+        return float(value), 0.0
+
+    if not isinstance(value, str):
+        return np.nan, np.nan
+
+    nums = re.findall(r"-?\d+\.\d+|-?\d+", value)
+    if len(nums) >= 2:
+        return float(nums[0]), float(nums[1])
+    elif len(nums) == 1:
+        return float(nums[0]), 0.0
+    else:
+        return np.nan, np.nan
+
+
+def compare_agents_all_metrics(
+    env_name,
+    results_dir="results",
+    out_dir="results/comparisons",
+    every_n=1,
+    max_step=500_000,
+):
+
+    os.makedirs(out_dir, exist_ok=True)
+
+    AGENTS = {
+        "SAC": {
+            "train": "train.csv",
+            "returns": "returns.csv",
+            "eval": "eval_returns.csv",
+            "actor_loss": "actor_loss",
+        },
+        "MaxEntDP": {
+            "train": "train_maxentdp.csv",
+            "returns": "returns_maxentdp.csv",
+            "eval": "eval_returns_maxentdp.csv",
+            "actor_loss": "actor_loss_mean",
+        },
+    }
+
+    # ============================================================
+    # 1) EVALUATION RETURN (mean ± std)
+    # ============================================================
+    plt.figure(figsize=(7, 5))
+
+    for label, spec in AGENTS.items():
+        path = os.path.join(
+            results_dir,
+            label.lower(),
+            env_name,
+            "logs",
+            spec["eval"],
+        )
+
+        if not os.path.exists(path):
+            print(f"[WARN] Missing eval file for {label}")
+            continue
+
+        df = pd.read_csv(path)
+        df = df[df["step"] <= max_step].iloc[::every_n]
+
+        means, stds = [], []
+
+        for v in df["eval_return"]:
+            if isinstance(v, str):
+                mean, std = parse_eval_return(v)
+                means.append(mean)
+                stds.append(std)
+            else:
+                means.append(v)
+                stds.append(0.0)
+
+        steps = df["step"].values
+        means = pd.Series(means).astype(float)
+        stds = pd.Series(stds).astype(float)
+
+        plt.plot(steps, means, label=label, linewidth=2)
+        if stds.max() > 0:
+            plt.fill_between(steps, means - stds, means + stds, alpha=0.2)
+
+    plt.xlabel("Training steps")
+    plt.ylabel("Evaluation return")
+    plt.title(f"Evaluation return – {env_name}")
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(os.path.join(out_dir, f"{env_name}_eval_return_compare.png"))
+    plt.close()
+
+    # ============================================================
+    # 2) TRAINING EPISODE RETURN
+    # ============================================================
+    plt.figure(figsize=(7, 5))
+
+    for label, spec in AGENTS.items():
+        path = os.path.join(
+            results_dir,
+            label.lower(),
+            env_name,
+            "logs",
+            spec["returns"],
+        )
+
+        if not os.path.exists(path):
+            print(f"[WARN] Missing returns file for {label}")
+            continue
+
+        df = pd.read_csv(path)
+        df = df[df["step"] <= max_step].iloc[::every_n]
+
+        plt.plot(
+            df["step"],
+            df["episode_return"],
+            label=label,
+            linewidth=2,
+        )
+
+    plt.xlabel("Training steps")
+    plt.ylabel("Episode return")
+    plt.title(f"Training episode return – {env_name}")
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(os.path.join(out_dir, f"{env_name}_episode_return_compare.png"))
+    plt.close()
+
+    # ============================================================
+    # 3) ACTOR LOSS (OPTIONAL, ALE JEST)
+    # ============================================================
+    plt.figure(figsize=(7, 5))
+    plotted = False
+
+    for label, spec in AGENTS.items():
+        path = os.path.join(
+            results_dir,
+            label.lower(),
+            env_name,
+            "logs",
+            spec["train"],
+        )
+
+        if not os.path.exists(path):
+            continue
+
+        df = pd.read_csv(path)
+        if spec["actor_loss"] not in df.columns:
+            continue
+
+        df = df[df["step"] <= max_step].iloc[::every_n]
+
+        plt.plot(
+            df["step"],
+            df[spec["actor_loss"]],
+            label=label,
+            linewidth=2,
+        )
+        plotted = True
+
+    if plotted:
+        plt.xlabel("Training steps")
+        plt.ylabel("Actor loss")
+        plt.title(f"Actor loss – {env_name}")
+        plt.grid(True)
+        plt.legend()
+        plt.tight_layout()
+        plt.savefig(os.path.join(out_dir, f"{env_name}_actor_loss_compare.png"))
+    plt.close()
+
+    print(f"[OK] Comparison plots generated for {env_name}")
+
+def compare_agents_plots(envs):
+    for env_name in envs:
+        compare_agents_all_metrics(env_name)

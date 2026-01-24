@@ -13,9 +13,9 @@ def train_multigoal_maxentdp(
     seed=0,
     buffer_size=200_000,
     batch_size=256,
-    prefix="MaxEntDP/"
+    prefix="maxentdp/"
 ):
-    print("=== MaxEntDP Training (MultiGoal) ===")
+    print("=== maxentdp Training (MultiGoal) ===")
     
     # env init
     env = MultiGoalPointEnv()
@@ -96,7 +96,7 @@ def log_multigoal_maxentdp(
     reward: float,
     closest_goal: int,
     info: dict,
-    prefix: str="MaxEntDP"
+    prefix: str="maxentdp"
     
 ):
     csv_path=f"results/{prefix}/multigoal/logs/train.csv"
