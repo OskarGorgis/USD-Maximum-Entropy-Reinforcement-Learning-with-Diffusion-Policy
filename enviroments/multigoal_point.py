@@ -11,7 +11,7 @@ class MultiGoalPointEnv(gym.Env):
 
         self.dt = 0.05
 
-        # 4 stałe cele – NIE LOSUJEMY
+        # definition of goals
         self.goals = np.array([
             [ 1.0,  1.0],
             [ 1.0, -1.0],
@@ -35,15 +35,13 @@ class MultiGoalPointEnv(gym.Env):
         action = np.clip(action, -1.0, 1.0)
         self.pos = self.pos + self.dt * action
 
-        # dystanse do WSZYSTKICH celów
+        # distances from goals
         distances = np.linalg.norm(self.goals - self.pos[None, :], axis=1)
 
-        # --- KLUCZOWA LINIA ---
-        # reward = -np.min(distances)
-        # albo (lepiej):
-        beta = 5.0  # im większe, tym ostrzejsze maksima
+
+        beta = 5.0  # higher - harder problem
         reward = np.log(np.sum(np.exp(-beta * distances))) / beta
 
-        done = False  # NIGDY nie kończymy epizodu
+        done = False
 
         return self.pos.copy(), reward, done, False, {}

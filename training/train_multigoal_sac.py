@@ -11,61 +11,23 @@ from tqdm import tqdm
 
 from .logger import save_checkpoint
 
-
-def log_step_to_csv(
-    step,
-    episode_return,
-    success_rate,
-    entropy,
-    temperature,
-    unique_goals_ratio,
-    csv_path="results/multigoal/logs/train.csv",
-):
-    os.makedirs(os.path.dirname(csv_path), exist_ok=True)
-
-    file_exists = os.path.exists(csv_path)
-
-    with open(csv_path, "a", newline="") as f:
-        writer = csv.writer(f)
-
-        # nagłówek tylko raz
-        if not file_exists:
-            writer.writerow([
-                "step",
-                "episode_return",
-                "success_rate",
-                "entropy",
-                "temperature",
-                "unique_goals_ratio",
-            ])
-
-        writer.writerow([
-            step,
-            episode_return,
-            success_rate,
-            entropy,
-            temperature,
-            unique_goals_ratio,
-        ])
-
-
 def train_multigoal(
     total_steps=200_000,
     seed=0,
     buffer_size=200_000,
     batch_size=256,
 ):
-    # --- ENV ---
+    # env creation
     env = MultiGoalPointEnv()
 
-    # --- AGENT ---
+    # agent creation
     agent = SACLearner.create(
         seed=seed,
         observation_space=env.observation_space,
         action_space=env.action_space,
     )
 
-    # --- REPLAY BUFFER ---
+    # buffer
     buffer = ReplayBuffer(
         obs_dim=env.observation_space.shape[0],
         act_dim=env.action_space.shape[0],
@@ -76,7 +38,7 @@ def train_multigoal(
 
     for step in tqdm(range(total_steps)):
 
-        # --- ACTION ---
+        # sampling actions
         if step < 1_000:
             action = env.action_space.sample()
         else:
@@ -89,35 +51,35 @@ def train_multigoal(
             action = np.asarray(action[0])
             agent = agent.replace(rng=rng)
 
-        # --- STEP ---
+        # next step in environment
         next_obs, reward, done, _, _ = env.step(action)
 
-        # --- which goal is closest ---
+        # measure nearest goal for the logging
         distances = np.linalg.norm(
             env.goals - next_obs[None, :],
             axis=1
         )
         closest_goal = int(np.argmin(distances))
 
-        # --- BUFFER ---
+        # replay buffer update
         buffer.add(
             obs,
             action,
             reward,
             next_obs,
-            False,  # NIGDY nie kończymy epizodu
+            False,
         )
 
         obs = next_obs
 
-        # --- UPDATE ---
+        # update agent with example batch after data collection period
         if step > 1_000:
             batch = buffer.sample(batch_size)
             agent, info = agent.update(batch)
         else:
             info = {}
 
-        # --- LOGGING ---
+        # log to file
         if step % 500 == 0 and step > 0:
             log_multigoal(
                 step=step,
@@ -128,20 +90,6 @@ def train_multigoal(
             )
 
     return agent
-
-
-
-def save_params(agent, step, prefix="/sac"):
-
-    params_to_save = {
-        "actor": to_bytes(agent.actor.params),
-        "critic1": to_bytes(agent.critic1.params),
-        "critic2": to_bytes(agent.critic2.params),
-        "temp": to_bytes(agent.temp.params),
-    }
-
-    save_checkpoint(step, params_to_save, "Multigoal", params_to_save, prefix=prefix)
-
 
 
 def log_multigoal(

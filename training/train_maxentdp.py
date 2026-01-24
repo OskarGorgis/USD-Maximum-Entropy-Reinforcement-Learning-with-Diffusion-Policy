@@ -12,13 +12,6 @@ from .logger import log_episode_return, log_eval_return, log_to_file, save_check
 
 from jaxrl5.evaluation import evaluate
 
-temp = {
-    "Hopper-v4" : 0.05 ,
-    "Humanoid-v4" : 0.02,
-    "Ant-v4" : 0.05,
-    "Walker2d-v4" : 0.01,
-    "HalfCheetah-v4" : 0.2,
-}
 
 def save_params(agent, step, env_name, params_to_save, prefix="MaxEntDP/"):
     params_to_save = {
@@ -33,6 +26,14 @@ def save_params(agent, step, env_name, params_to_save, prefix="MaxEntDP/"):
 def train_maxentdp(env_name, total_steps=500_000, prefix="MaxEntDP/"):
 
     print("=== MaxEntDP Training ===")
+
+    temp = {
+        "Hopper-v4" : 0.05 ,
+        "Humanoid-v4" : 0.02,
+        "Ant-v4" : 0.05,
+        "Walker2d-v4" : 0.01,
+        "HalfCheetah-v4" : 0.2,
+    }
 
     episode_return = 0.0
     episode_length = 0
@@ -63,11 +64,14 @@ def train_maxentdp(env_name, total_steps=500_000, prefix="MaxEntDP/"):
             action, agent = agent.sample_actions(obs)
             action = np.asarray(action)
 
-        next_obs, reward, done, _ = env.step(action)
+        next_obs, reward, terminated, trunaceted, info = env.env.step(action)
+        done = terminated or trunaceted
         # next_obs = np.array(next_obs)
         episode_return += reward
         episode_length += 1
-        buffer.add(obs, action, reward, next_obs, done)
+
+     
+        buffer.add(obs, action, reward, next_obs, terminated)
 
         if done:
             log_episode_return(
