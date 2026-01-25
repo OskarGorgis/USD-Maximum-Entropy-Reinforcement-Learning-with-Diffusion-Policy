@@ -34,7 +34,7 @@ def evaluate_sac_policy(agent, env_name, num_episodes=5):
     return float(np.mean(returns))
 
 
-def save_params(agent, step, env_name, params_to_save, prefix="sac/"):
+def save_params(agent, step, env_name, prefix="sac/"):
     data = {
         "actor": to_bytes(agent.actor.params),
         "critic1": to_bytes(agent.critic1.params),
@@ -43,7 +43,7 @@ def save_params(agent, step, env_name, params_to_save, prefix="sac/"):
         "target_critic2": to_bytes(agent.target_critic2.params),
         "temp": to_bytes(agent.temp.params),
     }
-    save_checkpoint(step, env_name, params_to_save, prefix=prefix)
+    save_checkpoint(step, env_name, data, prefix=prefix)
 
 
 def train_sac(env_name, total_steps=1_000_000, prefix = "sac/"):

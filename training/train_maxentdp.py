@@ -13,7 +13,7 @@ from .logger import log_episode_return, log_eval_return, log_to_file, save_check
 from jaxrl5.evaluation import evaluate
 
 
-def save_params(agent, step, env_name, params_to_save, prefix="maxentdp/"):
+def save_params(agent, step, env_name, prefix="maxentdp/"):
     params_to_save = {
         "score_model": to_bytes(agent.score_model.params),
         "critic_1": to_bytes(agent.critic_1.params),

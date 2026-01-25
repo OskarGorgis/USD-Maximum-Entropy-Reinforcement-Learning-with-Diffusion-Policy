@@ -6,7 +6,6 @@ from training.train_multigoal_sac import train_multigoal_sac
 from training.train_multigoal_maxentdp import train_multigoal_maxentdp
 
 
-
 if __name__ == "__main__":
     for env_name in ENVS:
         print(f"\n=== Training {env_name} ===")
